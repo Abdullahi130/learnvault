@@ -5,9 +5,10 @@ import { useWallet } from "../hooks/useWallet"
 
 export const WalletButton = () => {
 	const [showDisconnectModal, setShowDisconnectModal] = useState(false)
-	const { address, isPending, balances } = useWallet()
+	const { address, isPending, isReconnecting, balances } = useWallet()
 	const { t } = useTranslation()
-	const buttonLabel = isPending ? t("wallet.loading") : t("wallet.connect")
+	const buttonLabel =
+		isPending || isReconnecting ? t("wallet.loading") : t("wallet.connect")
 
 	const handleConnect = async () => {
 		const { connectWallet } = await import("../util/wallet")
@@ -25,7 +26,8 @@ export const WalletButton = () => {
 			<Button
 				variant="secondary"
 				size="md"
-				onClick={() => void handleConnect()}
+				onClick={() => void connectWallet()}
+				disabled={isReconnecting}
 			>
 				<Icon.Wallet02 />
 				{buttonLabel}
@@ -40,7 +42,7 @@ export const WalletButton = () => {
 				flexDirection: "row",
 				alignItems: "center",
 				gap: "5px",
-				opacity: isPending ? 0.6 : 1,
+				opacity: isPending || isReconnecting ? 0.6 : 1,
 			}}
 		>
 			<Text as="div" size="sm">
