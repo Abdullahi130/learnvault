@@ -241,6 +241,58 @@ fn remove_course_marks_course_inactive() {
 }
 
 #[test]
+fn pause_blocks_enroll() {
+    let (env, _contract_id, admin, client) = setup();
+    let learner = Address::generate(&env);
+    let course_id = sid(&env, "rust-101");
+
+    client.pause(&admin);
+
+    let result = client.try_enroll(&learner, &course_id);
+
+    assert_eq!(
+        result.err(),
+        Some(Ok(soroban_sdk::Error::from_contract_error(
+            Error::ContractPaused as u32
+        )))
+    );
+}
+
+#[test]
+fn pause_blocks_submission() {
+    let (env, _contract_id, admin, client) = setup();
+    let learner = Address::generate(&env);
+    let course_id = sid(&env, "rust-101");
+    let evidence = sid(&env, "ipfs://proof");
+
+    client.enroll(&learner, &course_id);
+    client.pause(&admin);
+
+    let result = client.try_submit_milestone(&learner, &course_id, &1, &evidence);
+
+    assert_eq!(
+        result.err(),
+        Some(Ok(soroban_sdk::Error::from_contract_error(
+            Error::ContractPaused as u32
+        )))
+    );
+}
+
+#[test]
+fn unpause_restores_functionality() {
+    let (env, _contract_id, admin, client) = setup();
+    let learner = Address::generate(&env);
+    let course_id = sid(&env, "rust-101");
+
+    client.pause(&admin);
+    client.unpause(&admin);
+
+    client.enroll(&learner, &course_id);
+
+    assert!(client.is_enrolled(&learner, &course_id));
+}
+
+#[test]
 fn non_admin_cannot_add_course() {
     let (env, _contract_id, _admin, client) = setup();
     let attacker = Address::generate(&env);
